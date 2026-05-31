@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🏛️ Architect — Agent Symphony
+<img src="docs/img/banner.png" alt="Architect — Agent Symphony" width="100%" />
+
+# Architect — Agent Symphony
 
 ### A hierarchical multi-agent orchestrator for the Claude Agent SDK
 
@@ -10,8 +12,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-22c55e.svg?style=for-the-badge)](LICENSE)
 [![Built with Claude Agent SDK](https://img.shields.io/badge/Built%20with-Claude%20Agent%20SDK-0F766E?style=for-the-badge)](https://docs.anthropic.com/en/api/agent-sdk)
 [![Desktop: Tauri](https://img.shields.io/badge/Desktop-Tauri%20%2B%20SvelteKit-24c8db?style=for-the-badge&logo=tauri)](https://tauri.app)
-
-<img src="docs/img/app-screenshot.png" alt="Architect — Agent Symphony desktop app" width="100%" />
 
 </div>
 
@@ -48,7 +48,19 @@ Think of it as **mission control for a team of Claude agents** — purpose-built
 
 ---
 
+## 📸 The cockpit
+
+<div align="center">
+<img src="docs/img/app-screenshot.png" alt="Architect — Agent Symphony desktop cockpit" width="100%" />
+</div>
+
+---
+
 ## 🎼 The Symphony — how the hierarchy plays
+
+<div align="center">
+<img src="docs/img/architecture.png" alt="Architecture: Architect → Project Chiefs → Specialists / Workers, with a panel of Advisors" width="92%" />
+</div>
 
 ```
                         🏛️  ARCHITECT  (the conductor)
