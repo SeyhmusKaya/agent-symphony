@@ -9,6 +9,10 @@
 *One conductor. A company of AI agents. You stay in command.*
 
 [![Sponsor](https://img.shields.io/github/sponsors/SeyhmusKaya?style=for-the-badge&logo=githubsponsors&color=ea4aaa)](https://github.com/sponsors/SeyhmusKaya)
+[![Stars](https://img.shields.io/github/stars/SeyhmusKaya/agent-symphony?style=for-the-badge&color=f59e0b)](https://github.com/SeyhmusKaya/agent-symphony/stargazers)
+[![Release](https://img.shields.io/github/v/release/SeyhmusKaya/agent-symphony?style=for-the-badge&color=8b5cf6)](https://github.com/SeyhmusKaya/agent-symphony/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/SeyhmusKaya/agent-symphony/ci.yml?branch=main&style=for-the-badge&label=build)](https://github.com/SeyhmusKaya/agent-symphony/actions)
+[![Last commit](https://img.shields.io/github/last-commit/SeyhmusKaya/agent-symphony?style=for-the-badge&color=10b981)](https://github.com/SeyhmusKaya/agent-symphony/commits/main)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22c55e.svg?style=for-the-badge)](LICENSE)
 [![Built with Claude Agent SDK](https://img.shields.io/badge/Built%20with-Claude%20Agent%20SDK-0F766E?style=for-the-badge)](https://docs.anthropic.com/en/api/agent-sdk)
 [![Desktop: Tauri](https://img.shields.io/badge/Desktop-Tauri%20%2B%20SvelteKit-24c8db?style=for-the-badge&logo=tauri)](https://tauri.app)
@@ -51,6 +55,17 @@ Think of it as **mission control for a team of Claude agents** — purpose-built
 If you've used **Claude Code**, **CrewAI**, **AutoGen**, or **LangGraph**: those are frameworks and CLIs you *script*. **Architect — Agent Symphony** is a **desktop cockpit where the orchestration *is* the product** — you watch and command a standing organization of agents across real projects, with live cost and context visibility, instead of writing orchestration code. It's built directly on the official **[Claude Agent SDK](https://docs.anthropic.com/en/api/agent-sdk)** (in-process, no separate CLI), so you get Claude-Code-grade behavior with a multi-agent, multi-project UI on top.
 
 **Keywords:** Claude agent orchestration · multi-agent AI · agentic workflows · autonomous coding agents · Claude Code alternative UI · AI software team · MCP tools.
+
+---
+
+## 🌟 What makes it different
+
+- 🧬 **Per-agent skills** — every agent loads its **own** skill files. You build a real specialist with deep domain knowledge, not a generic chatbot wearing a name tag.
+- 🤖 **Skills auto-assigned by task** — when a chief spins up a new specialist, it **automatically inherits the right domain skills** for the job: a design specialist gets the design skills, a security one gets the security skills.
+- 🗂️ **Browse projects like browser tabs** — flip between multiple **live projects and parallel sessions** like Chrome tabs, each with its own agents, context, history and cost meter.
+- 💬 **Agents talk to each other** — chiefs consult the advisors and message other project chiefs; work is *negotiated between agents*, not just dictated top-down by you.
+- 🌙 **Self-improving overnight** — the head Architect can **analyze its own codebase every night and propose / ship improvements autonomously**, so the orchestrator keeps getting better while you sleep.
+- ⚡ **Parallel by default** — independent subtasks fan out to many agents at once, then the conductor merges the results.
 
 ---
 
