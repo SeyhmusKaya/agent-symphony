@@ -147,11 +147,11 @@ Built with **Tauri + SvelteKit** — a fast, native desktop cockpit (not a brows
 
 ## 📦 Getting started
 
-> **Status:** This is an actively developed project, originally built for the author's own multi-project workflow and now open-sourced. It runs on Windows today; treat it as power-user software — expect to read some code.
+> **Status:** **Actively used in production every day** by the author to run real, multi-project software work — this is not a demo or abandonware. It runs on Windows today and is power-user software (expect to read some code). **It is actively maintained and will keep being improved — if there's interest, development continues.** Open an [issue](https://github.com/SeyhmusKaya/agent-symphony/issues) with what you'd want, or [sponsor](https://github.com/sponsors/SeyhmusKaya) to help shape the roadmap.
 
 ### Prerequisites
 - **Node.js 20+**
-- An **Anthropic API key** (set `ANTHROPIC_API_KEY` in your environment)
+- **Claude access** — either a **Claude Pro / Max subscription** *or* an **Anthropic API key**. See [Authentication](#-authentication--works-with-your-claude-plan-or-an-api-key) below.
 - For the desktop build: the [Tauri prerequisites](https://tauri.app/start/prerequisites/) (Rust toolchain)
 
 ### Run the orchestrator (backend)
@@ -183,9 +183,22 @@ cd ui && npm run check     # UI (svelte-check)
 
 ---
 
+## 🔑 Authentication — works with your Claude plan *or* an API key
+
+Architect — Agent Symphony runs on the official **Claude Agent SDK**, so it authenticates exactly like Claude Code. You have two options:
+
+- 🟢 **Claude Pro / Max subscription** *(recommended for most people)* — log in once with the Claude CLI (`claude login`) and pick your Claude.ai account. Usage counts against your existing **Pro/Max quota — no API key, no per-token bill.**
+- 🔵 **Anthropic API key** *(pay-per-token)* — set `ANTHROPIC_API_KEY`. Best for teams/automation with Console billing.
+
+> ⚠️ If `ANTHROPIC_API_KEY` is set in your environment, it **takes precedence** over your subscription. To use your Pro/Max plan, leave that variable unset (and run `claude logout` → `claude login` with the Pro/Max account).
+
+The app's local proxy only optimizes prompt caching — it **never touches your credentials or the OAuth refresh path**, so both auth modes work out of the box.
+
+---
+
 ## ⚙️ Configuration
 
-- **`ANTHROPIC_API_KEY`** — required, your Anthropic key.
+- **Auth** — a Claude Pro/Max login *or* `ANTHROPIC_API_KEY` (see [Authentication](#-authentication--works-with-your-claude-plan-or-an-api-key)).
 - **`secrets.local.json`** — optional SSH / web-auth / relay credentials (git-ignored, never committed). See `secrets.local.json.example`.
 - **Feature flags** (environment variables) — toggle optional subsystems such as long-TTL prompt cache, async delegation and native compaction.
 
