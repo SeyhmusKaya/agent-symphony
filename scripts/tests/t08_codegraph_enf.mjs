@@ -1,0 +1,15 @@
+import { connect, collect, sendKomut, sleep } from "./_ws.mjs";
+const ws = await connect(4324, 8000);
+const c = collect(ws);
+const tools = [];
+c.onAny((m)=>{ if(m.kind==="sef_aktivite"&&m.ad) tools.push(m.ad); });
+sendKomut(ws, "Where is the 'EmlakjetClient' class defined in the project and what methods does it have? Find it and tell me.");
+const r = await c.waitForCevap(150000);
+const codeUsed = tools.filter(t=>/code_search|code_node|code_callers|code_callees|code_files|code_/.test(t));
+const grepBash = tools.filter(t=>/^(Grep|Bash)$/.test(t));
+console.log("turn:", r);
+console.log("tool sequence:", tools.join(", ").slice(0,300));
+console.log("CODEGRAPH calls:", codeUsed.length, codeUsed.join(","));
+console.log("Grep/Bash calls:", grepBash.length);
+console.log(codeUsed.length>0 ? "PASS: codegraph used" : "FAIL: no codegraph");
+try{ws.close()}catch{}; process.exit(0);

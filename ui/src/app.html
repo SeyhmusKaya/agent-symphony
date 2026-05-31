@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%sveltekit.assets%/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tauri + SvelteKit + Typescript App</title>
+    %sveltekit.head%
+  </head>
+  <body data-sveltekit-preload-data="hover">
+    <div style="display: contents">%sveltekit.body%</div>
+    <script>
+      // Fix 137: ESKI davranis document.body.innerHTML = hata -> TEK stray
+      // promise rejection (orn. Tauri dialog ACL) TUM UI'i siliyordu, proje
+      // kullanilamaz hale geliyordu. Yeni: ust kosede KAPATILABILIR banner
+      // (non-destructive). Uygulama calismaya devam eder; kullanici hatayi
+      // gorur ama ekran brick olmaz.
+      function arcShowErr(label, detail) {
+        try {
+          var id = "arc-err-banner";
+          var box = document.getElementById(id);
+          if (!box) {
+            box = document.createElement("div");
+            box.id = id;
+            box.style.cssText =
+              "position:fixed;top:10px;right:10px;left:10px;z-index:2147483647;" +
+              "max-height:38vh;overflow:auto;background:#fff;border:1px solid #f1aeae;" +
+              "border-left:4px solid #b00;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.18);" +
+              "padding:12px 38px 12px 14px;color:#b00;font:12px/1.5 monospace;white-space:pre-wrap;word-break:break-word";
+            var close = document.createElement("button");
+            close.textContent = "×";
+            close.setAttribute("aria-label", "Kapat");
+            close.style.cssText =
+              "position:absolute;top:6px;right:8px;border:none;background:transparent;" +
+              "color:#b00;font-size:20px;line-height:1;cursor:pointer";
+            close.onclick = function () { box.remove(); };
+            box.appendChild(close);
+            var pre = document.createElement("div");
+            pre.id = id + "-body";
+            box.appendChild(pre);
+            document.body.appendChild(box);
+          }
+          var body = document.getElementById(id + "-body");
+          if (body) body.textContent = "ARC HATA [" + label + "]\n\n" + detail;
+        } catch (_) { /* yoksay — banner bile basarisizsa sessizce gec */ }
+      }
+      window.addEventListener("error", function (e) {
+        arcShowErr("error", (e.message || "") + "\n" +
+          ((e.error && e.error.stack) || (e.filename + ":" + e.lineno)));
+      });
+      window.addEventListener("unhandledrejection", function (e) {
+        var r = e.reason;
+        arcShowErr("promise", (r && (r.stack || r.message)) || String(r));
+      });
+    </script>
+  </body>
+</html>

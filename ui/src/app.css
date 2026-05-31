@@ -1,0 +1,270 @@
+/* ============================================================
+   Architect — Tasarim Sistemi
+   ============================================================ */
+
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/geist-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/geist-500.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/geist-600.woff2") format("woff2");
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/geist-700.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/fonts/jbmono-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/fonts/jbmono-500.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+
+:root {
+  /* Marka — teal */
+  --arc-primary: #0f766e;
+  --arc-primary-strong: #0b5a53;
+  --arc-primary-hover: #0d6b63;
+  --arc-accent: #14b8a6;
+  --arc-primary-soft: #ccfbf1;
+  --arc-primary-tint: #f0fdfa;
+
+  /* Notr skala (mavimsi-soguk) */
+  --arc-n0: #ffffff;
+  --arc-n50: #f7f8fa;
+  --arc-n100: #f1f3f6;
+  --arc-n200: #e5e8ec;
+  --arc-n300: #d2d7de;
+  --arc-n400: #9ba3b0;
+  --arc-n600: #5a6273;
+  --arc-n800: #2a2f3a;
+  --arc-n900: #171a21;
+
+  /* Anlam renkleri */
+  --arc-ok: #059669;
+  --arc-ok-soft: #d1fae5;
+  --arc-warn: #d97706;
+  --arc-warn-soft: #fef0d9;
+  --arc-danger: #dc2626;
+  --arc-danger-soft: #fde8e8;
+  --arc-info: #0369a1;
+  --arc-info-soft: #dceefb;
+
+  /* Rol yuzeyleri */
+  --arc-bg: #f4f6f8;
+  --arc-surface: #ffffff;
+  --arc-surface-2: #f7f8fa;
+  --arc-chat-bg: #fbfbf9;
+  --arc-border: #e5e8ec;
+  --arc-border-strong: #d2d7de;
+
+  --arc-text: #171a21;
+  --arc-text-soft: #5a6273;
+  --arc-text-faint: #9ba3b0;
+
+  /* Eski ad uyumlulugu — diger ekranlar henuz tasinmadi */
+  --arc-radius: 12px;
+  --arc-radius-sm: 8px;
+
+  /* Radius */
+  --arc-r-sm: 8px;
+  --arc-r: 12px;
+  --arc-r-lg: 16px;
+  --arc-r-pill: 999px;
+
+  /* Golge kademeleri */
+  --arc-shadow-sm: 0 1px 2px rgba(23, 26, 33, 0.05);
+  --arc-shadow: 0 2px 8px rgba(23, 26, 33, 0.07);
+  --arc-shadow-lg: 0 12px 32px rgba(23, 26, 33, 0.12);
+  --arc-shadow-teal: 0 6px 20px rgba(15, 118, 110, 0.18);
+  --arc-shadow-lift: 0 6px 20px rgba(15, 118, 110, 0.18);
+
+  --arc-grad-header: linear-gradient(135deg, #0f766e 0%, #0d8478 55%, #14b8a6 100%);
+
+  --arc-font: "Geist", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --arc-mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+
+  --arc-ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--arc-font);
+  background: var(--arc-bg);
+  color: var(--arc-text);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+::selection {
+  background: var(--arc-primary-soft);
+  color: var(--arc-primary-strong);
+}
+
+/* Ince kayan cubuk */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--arc-border-strong);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--arc-n400);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---- Tipografi yardimcilari ---- */
+.arc-caption {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--arc-text-faint);
+  line-height: 1.3;
+}
+
+.arc-mono {
+  font-family: var(--arc-mono);
+}
+
+/* ---- Buton ---- */
+.arc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid transparent;
+  border-radius: var(--arc-r-sm);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    transform 0.15s var(--arc-ease),
+    box-shadow 0.15s var(--arc-ease),
+    background 0.15s var(--arc-ease),
+    border-color 0.15s var(--arc-ease),
+    color 0.15s var(--arc-ease);
+}
+
+.arc-btn:active {
+  transform: scale(0.98);
+}
+
+.arc-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.arc-btn-primary {
+  background: var(--arc-primary);
+  color: #fff;
+}
+.arc-btn-primary:hover:not(:disabled) {
+  background: var(--arc-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--arc-shadow-teal);
+}
+
+.arc-btn-ghost {
+  background: var(--arc-surface);
+  border-color: var(--arc-border);
+  color: var(--arc-text-soft);
+}
+.arc-btn-ghost:hover:not(:disabled) {
+  border-color: var(--arc-primary);
+  color: var(--arc-primary);
+}
+
+.arc-btn-subtle {
+  background: transparent;
+  color: var(--arc-text-soft);
+}
+.arc-btn-subtle:hover:not(:disabled) {
+  background: var(--arc-n100);
+  color: var(--arc-text);
+}
+
+/* ---- Kart ---- */
+.arc-card {
+  background: var(--arc-surface);
+  border: 1px solid var(--arc-border);
+  border-radius: var(--arc-r);
+  box-shadow: var(--arc-shadow-sm);
+}
+
+/* ---- Form ---- */
+.arc-input {
+  border: 1px solid var(--arc-border);
+  border-radius: var(--arc-r-sm);
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--arc-text);
+  background: var(--arc-surface);
+  transition:
+    border-color 0.15s var(--arc-ease),
+    box-shadow 0.15s var(--arc-ease);
+}
+.arc-input:focus {
+  outline: none;
+  border-color: var(--arc-primary);
+  box-shadow: 0 0 0 3px var(--arc-primary-soft);
+}
+.arc-input::placeholder {
+  color: var(--arc-text-faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

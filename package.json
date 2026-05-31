@@ -1,0 +1,42 @@
+{
+  "name": "architect",
+  "version": "0.1.0",
+  "description": "Architect — Agent Symphony: a hierarchical multi-agent orchestrator for the Claude Agent SDK",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch orchestrator/main.ts",
+    "start": "tsx orchestrator/main.ts",
+    "tunnel": "tsx relay/tunnel.ts",
+    "test:recovery": "tsx orchestrator/recovery.test.ts",
+    "build": "tsc && node scripts/copy-codegraph-assets.mjs",
+    "postbuild": "node scripts/copy-codegraph-assets.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.148",
+    "@huggingface/transformers": "^4.2.0",
+    "@types/ws": "^8.18.1",
+    "better-sqlite3": "^12.10.0",
+    "chokidar": "^5.0.0",
+    "fast-glob": "^3.3.3",
+    "patchright": "^1.60.0",
+    "playwright": "^1.60.0",
+    "tree-sitter": "^0.25.0",
+    "tree-sitter-c-sharp": "^0.23.5",
+    "tree-sitter-dart": "^1.0.0",
+    "tree-sitter-javascript": "^0.25.0",
+    "tree-sitter-php": "^0.24.2",
+    "tree-sitter-python": "^0.25.0",
+    "tree-sitter-svelte": "^0.10.1",
+    "tree-sitter-typescript": "^0.23.2",
+    "ws": "^8.20.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

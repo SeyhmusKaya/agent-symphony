@@ -1,0 +1,36 @@
+# Sirlar - asla commit edilmez
+secrets.local.json
+relay.config.json
+relay/relay.config.json
+.env
+.env.*
+
+# Bagimliliklar / build ciktilari
+node_modules/
+dist/
+build/
+ui/node_modules/
+ui/dist/
+ui/build/
+ui/src-tauri/target/
+ui/src-tauri/gen/
+web/node_modules/
+web/dist/
+relay/node_modules/
+
+# Calisma zamani verisi
+.team/
+.architect/
+*.exe
+
+# Test artifacts
+test-result-mimar-*.json
+test-results/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Agent Skill (project-level, locally cloned)
+.claude/skills/
