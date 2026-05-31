@@ -46,6 +46,12 @@ Instead of chatting with a single assistant, you run an **org chart of specializ
 
 Think of it as **mission control for a team of Claude agents** — purpose-built for orchestrating real, multi-project software work.
 
+### 🧭 Where it fits
+
+If you've used **Claude Code**, **CrewAI**, **AutoGen**, or **LangGraph**: those are frameworks and CLIs you *script*. **Architect — Agent Symphony** is a **desktop cockpit where the orchestration *is* the product** — you watch and command a standing organization of agents across real projects, with live cost and context visibility, instead of writing orchestration code. It's built directly on the official **[Claude Agent SDK](https://docs.anthropic.com/en/api/agent-sdk)** (in-process, no separate CLI), so you get Claude-Code-grade behavior with a multi-agent, multi-project UI on top.
+
+**Keywords:** Claude agent orchestration · multi-agent AI · agentic workflows · autonomous coding agents · Claude Code alternative UI · AI software team · MCP tools.
+
 ---
 
 ## 📸 The cockpit
