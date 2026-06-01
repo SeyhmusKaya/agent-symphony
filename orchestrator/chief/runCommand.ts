@@ -428,6 +428,15 @@ export function createRunCommand(deps: RunCommandDeps): (cmd: Command) => Promis
       chief.pushChatFor(sid, { role: "sef", text: note, ts: Date.now() });
     }
     chief.pushChatFor(sid, {
+      // Fix DUP-BUBBLE: stamp the stored sef reply with the same commandId as the
+      // turn. The UI reconcile (projectSession.svelte.ts:1393) dedups sef replies
+      // by commandId FIRST; without it the stored entry had no commandId, so dedup
+      // fell back to a fragile text-hash + 30/60s time window. On tool-heavy/long
+      // turns the live entry's text (concatenated stream deltas) != stored reply
+      // (SDK reportedReply), so the hash missed and the time window had elapsed →
+      // the backend snapshot was appended as a SECOND identical bubble (double
+      // reply). With commandId the dedup is exact and never falls through.
+      commandId: cmd.id,
       role: "sef",
       text: reply,
       ts: Date.now(),
@@ -436,7 +445,7 @@ export function createRunCommand(deps: RunCommandDeps): (cmd: Command) => Promis
       cost,
       images: images.length ? images : undefined,
       narrative: extractNarrative(reply) || undefined,
-    });
+    } as SessionChatEntry & { commandId?: string });
     if (sid === chief.getActiveId()) syncSessionState();
     // Send the system notes over WS too (since the UI chatLog refresh comes from the
     // status channel server.pushStatus already updates it, but broadcast directly too).

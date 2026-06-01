@@ -600,8 +600,8 @@
           {:else}
             {#each shownAgentChat as m (m.ts)}
               {@const isUzman = m.role === "uzman"}
-              {@const longTask = !isUzman && (m.text?.length ?? 0) > 360}
-              {@const collapsed = longTask && !expandedTasks.has(m.ts)}
+              {@const isLong = (m.text?.length ?? 0) > 360}
+              {@const collapsed = isLong && !expandedTasks.has(m.ts)}
               <div class="uz-msg" class:uzman={isUzman} class:err={m.hata}>
                 <div class="uz-msg-head">
                   <span class="uz-msg-role">
@@ -610,15 +610,24 @@
                   <span class="uz-msg-time">{fmtClock(m.ts)}</span>
                 </div>
                 {#if isUzman}
-                  <!-- Specialist reply rendered as markdown (clean instead of raw ##/**/---). -->
-                  <div class="uz-msg-text md">{@html renderMarkdown(m.text)}</div>
+                  <!-- Specialist reply rendered as markdown (clean instead of raw ##/**/---).
+                       Long replies now collapse too (parity with the task bubble). -->
+                  {#if collapsed}
+                    <div class="uz-msg-text md">{@html renderMarkdown(m.text.slice(0, 360) + " …")}</div>
+                    <button class="uz-more" onclick={() => toggleTask(m.ts)}>Show all</button>
+                  {:else}
+                    <div class="uz-msg-text md">{@html renderMarkdown(m.text)}</div>
+                    {#if isLong}
+                      <button class="uz-more" onclick={() => toggleTask(m.ts)}>Collapse</button>
+                    {/if}
+                  {/if}
                 {:else if collapsed}
                   <!-- Chief task is very long — truncate + "Show all". -->
                   <div class="uz-msg-text uz-task">{m.text.slice(0, 360)}…</div>
                   <button class="uz-more" onclick={() => toggleTask(m.ts)}>Show all</button>
                 {:else}
                   <div class="uz-msg-text uz-task">{m.text}</div>
-                  {#if longTask}
+                  {#if isLong}
                     <button class="uz-more" onclick={() => toggleTask(m.ts)}>Collapse</button>
                   {/if}
                 {/if}

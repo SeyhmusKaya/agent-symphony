@@ -24,6 +24,16 @@ const DEPRECATED_MODEL_MAP: Record<string, string> = {
   "haiku": "claude-haiku-4-5",
 };
 
+// Normalize a model slug at WRITE time (create/updateModel) — not just on load().
+// The chief often calls create_agent with model "sonnet" or "claude-sonnet-4-5";
+// without this the def is persisted with the deprecated slug and only migrated on
+// the NEXT load. Mapping here means specialists are born as the current slug
+// (claude-sonnet-4-6) immediately.
+export function normalizeModelSlug(model: string | undefined): string | undefined {
+  if (!model) return model;
+  return DEPRECATED_MODEL_MAP[model] ?? model;
+}
+
 // Fix 99: specialist chat persistence. The UI agentChat was $derived from the
 // feed; on window close → feed=[] → the chat emptied. This record persists on disk.
 export interface SpecialistChatEntry {
@@ -147,7 +157,7 @@ export class AgentRegistry {
       role: input.role,
       systemPrompt: input.systemPrompt,
       allowedTools: input.allowedTools ?? [],
-      model: input.model ?? DEFAULT_MODEL,
+      model: normalizeModelSlug(input.model) ?? DEFAULT_MODEL,
       effort: input.effort ?? DEFAULT_EFFORT,
       skills: input.skills ?? [],
       sessionId: null,
@@ -179,7 +189,7 @@ export class AgentRegistry {
 
   updateModel(name: string, model?: string, effort?: Effort): void {
     const def = this.require(name);
-    if (model !== undefined) def.model = model;
+    if (model !== undefined) def.model = normalizeModelSlug(model) ?? model;
     if (effort !== undefined) def.effort = effort;
     this.save();
   }

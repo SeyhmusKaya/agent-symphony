@@ -969,7 +969,30 @@ export class ProjectSession {
           msg.segments.length &&
           (!m.segments || msg.segments.length >= m.segments.length)
         ) {
+          // Carry over the live subagent activity trail (ilerleme) + durum by tool id.
+          // The backend final segments rebuild tool objects WITHOUT these UI-only
+          // fields, so without this the expandable Activity panel would go blank the
+          // moment the turn finishes. Preserve them so the trail stays after the turn.
+          const carry = new Map<string, { ilerleme?: string; durum?: string }>();
+          for (const seg of m.segments ?? []) {
+            if (seg.kind !== "tools") continue;
+            for (const t of seg.tools as Array<ToolActivity & { ilerleme?: string; durum?: string }>) {
+              if (t.id && (t.ilerleme || t.durum)) carry.set(t.id, { ilerleme: t.ilerleme, durum: t.durum });
+            }
+          }
           m.segments = msg.segments;
+          if (carry.size) {
+            for (const seg of m.segments) {
+              if (seg.kind !== "tools") continue;
+              for (const t of seg.tools as Array<ToolActivity & { ilerleme?: string; durum?: string }>) {
+                const c = t.id ? carry.get(t.id) : undefined;
+                if (c) {
+                  if (c.ilerleme && !t.ilerleme) t.ilerleme = c.ilerleme;
+                  if (c.durum && !t.durum) t.durum = c.durum;
+                }
+              }
+            }
+          }
         }
         if (msg.images && msg.images.length) m.images = msg.images;
         if (msg.narrative) m.narrative = msg.narrative;
@@ -1060,16 +1083,30 @@ export class ProjectSession {
       }
       this.canliAktivite = [...this.canliAktivite];
       // Reflect into the streaming message's segments too — so the tool batch is
-      // seen in the correct order between text blocks.
-      // Result/input not yet present; filled by the final sef_cevap.
-      if (msg.durum === "calisiyor" && this.streamIdx >= 0 && this.chat[this.streamIdx]) {
+      // seen in the correct order between text blocks, AND the finished/error state
+      // propagates to the inline card. Previously ONLY "calisiyor" was reflected; a
+      // finished Agent whose result text was empty had no `sonuc` to flip it, so the
+      // SubagentInline card stayed stuck on "running" until the whole turn ended.
+      // Now "bitti"/"hata" write durum onto the existing segment tool so the card
+      // flips immediately (SubagentInline reads tool.durum).
+      if (this.streamIdx >= 0 && this.chat[this.streamIdx]) {
         const m = this.chat[this.streamIdx];
         if (!m.segments) m.segments = [];
-        const last = m.segments[m.segments.length - 1];
-        // Fix 62: add id to the tool object — for mid-stream token update match.
-        const tool: ToolActivity = { id: msg.id, ad: msg.ad, girdi: "", sonuc: "", hata: false };
-        if (last && last.kind === "tools") last.tools.push(tool);
-        else m.segments.push({ kind: "tools", tools: [tool] });
+        let existing: (ToolActivity & { durum?: string }) | undefined;
+        for (const seg of m.segments) {
+          if (seg.kind !== "tools") continue;
+          const f = seg.tools.find((t) => t.id === msg.id);
+          if (f) { existing = f as ToolActivity & { durum?: string }; break; }
+        }
+        if (existing) {
+          existing.durum = msg.durum;
+        } else if (msg.durum === "calisiyor") {
+          const last = m.segments[m.segments.length - 1];
+          // Fix 62: add id to the tool object — for mid-stream token update match.
+          const tool = { id: msg.id, ad: msg.ad, girdi: "", sonuc: "", hata: false, durum: msg.durum } as ToolActivity & { durum?: string };
+          if (last && last.kind === "tools") last.tools.push(tool);
+          else m.segments.push({ kind: "tools", tools: [tool] });
+        }
         this.chat = [...this.chat];
       }
     } else if (msg.kind === "sef_tur_basladi") {

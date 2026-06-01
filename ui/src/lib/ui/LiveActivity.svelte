@@ -29,6 +29,14 @@
   } = $props();
 
   const calisiyor = $derived(aktivite.some((a) => a.durum === "calisiyor"));
+  // Fix 157: how many specialists (native Agent tool) are running right now. When
+  // the chief delegates, the native Agent tool is SYNCHRONOUS — the chief turn is
+  // BLOCKED until the specialist(s) return. The chief is NOT free meanwhile, so a
+  // message you send is QUEUED (shown with the "Queued" badge) and processed on the
+  // next turn. Surfacing the count makes that explicit instead of a vague "Thinking".
+  const bekleyenUzman = $derived(
+    aktivite.filter((a) => a.durum === "calisiyor" && (a.ad === "Agent" || a.ad === "Task")).length,
+  );
 
   function fmtElapsed(s: number): string {
     if (s < 60) return `${s}s`;
@@ -81,7 +89,13 @@
       </span>
     {/if}
     <span class="live-label">
-      {calisiyor ? "Running tool" : "Thinking"}
+      {#if bekleyenUzman > 0}
+        Waiting on {bekleyenUzman} specialist{bekleyenUzman > 1 ? "s" : ""} — chief busy, your message will queue
+      {:else if calisiyor}
+        Running tool
+      {:else}
+        Thinking
+      {/if}
     </span>
     <span class="live-stat" title={tooltip}>
       {fmtElapsed(elapsed)}

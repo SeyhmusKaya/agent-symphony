@@ -840,6 +840,13 @@ export function createRunChiefAttempt(deps: RunChiefAttemptDeps): RunChiefAttemp
     // task the chief sent + the specialist's reply (read-only). Map: Agent tool_use id ->
     // specialist name + task text.
     const agentDelegations = new Map<string, { specialist: string; task: string }>();
+    // Fix 155: per-subagent REAL usage, keyed by the owner Agent tool_use id. The
+    // subagent runs on ITS OWN model (e.g. sonnet) inside an isolated context; its
+    // usage is NOT in the parent result.usage. Previously the Agent card showed the
+    // PARENT's (chief/opus) round delta, making specialists look like they ran on the
+    // chief's expensive model. Here we accumulate the subagent's own usage (input =
+    // max, output = sum) and price it with the subagent's own model slug.
+    const subUsage = new Map<string, { uc: number; cr: number; cc: number; out: number }>();
     // Fix 138 (C): a guard to start delege_arkaplan tool_use's only once (so the job does
     // not start twice if the same tool_use id appears in multiple messages).
     const bgJobStarted = new Set<string>();
@@ -896,10 +903,12 @@ export function createRunChiefAttempt(deps: RunChiefAttemptDeps): RunChiefAttemp
     function pushSubProgress(parentId: string, parca: string): void {
       if (!parca) return;
       const onceki = subIlerleme.get(parentId) ?? "";
-      // The last ~600 characters are kept — the card shows a short preview, do not let it
-      // grow unbounded.
+      // Keep the last ~4000 chars — the card preview shows a short tail, but the
+      // expandable activity panel (SubagentInline) renders the full retained trail
+      // (step-by-step tools + text the specialist produces live). Capped so it does
+      // not grow unbounded over a long subagent run.
       let yeni = onceki + parca;
-      if (yeni.length > 600) yeni = yeni.slice(-600);
+      if (yeni.length > 4000) yeni = yeni.slice(-4000);
       subIlerleme.set(parentId, yeni);
       const now = Date.now();
       const last = subEmitTs.get(parentId) ?? 0;
@@ -1152,6 +1161,11 @@ export function createRunChiefAttempt(deps: RunChiefAttemptDeps): RunChiefAttemp
               for (const id of pendingToolIds) {
                 const t = toolMap.get(id);
                 if (t) {
+                  // Fix 155: Agent/Task subagent tools are priced from their OWN model
+                  // usage (see the isSubagent usage branch), NOT the parent round delta.
+                  // Skip them here so the chief/opus delta does not overwrite the real
+                  // specialist cost.
+                  if (t.ad === "Agent" || t.ad === "Task") continue;
                   t.tokens = {
                     in: dUncached + dCacheCreate,
                     out: dOutput,
@@ -1224,6 +1238,50 @@ export function createRunChiefAttempt(deps: RunChiefAttemptDeps): RunChiefAttemp
               usd: liveUsd,
               model: liveModel,
             });
+          } else if (u && isSubagent) {
+            // Fix 155: attribute the subagent's REAL usage (its OWN model) to the
+            // owner Agent tool card. The subagent message carries its own model slug
+            // (proof it ran on the assigned model, e.g. sonnet, not the chief's opus).
+            // Without this the card showed the parent opus round delta → specialists
+            // looked like they ran on the chief's model + cost.
+            const subParentId = (msg as { parent_tool_use_id?: string | null }).parent_tool_use_id;
+            const subModel = (msg as { message?: { model?: string } }).message?.model || "";
+            if (subParentId) {
+              const acc = subUsage.get(subParentId) ?? { uc: 0, cr: 0, cc: 0, out: 0 };
+              // input_tokens is the cumulative prompt of THAT subagent call → max;
+              // output is new per call → sum (same rule as the parent accounting).
+              acc.uc = Math.max(acc.uc, u.input_tokens ?? 0);
+              acc.cr = Math.max(acc.cr, u.cache_read_input_tokens ?? 0);
+              acc.cc = Math.max(acc.cc, u.cache_creation_input_tokens ?? 0);
+              acc.out += u.output_tokens ?? 0;
+              subUsage.set(subParentId, acc);
+              const t = toolMap.get(subParentId);
+              if (t && subModel) {
+                const sp = priceForModel(subModel, {
+                  is1m: isOpus(subModel),
+                  totalContext: acc.uc + acc.cr + acc.cc,
+                });
+                const subCch1h = (process.env.ARCHITECT_CACHE_1H === "1" || process.env.ARCHITECT_CCH_MOVE === "1");
+                const subUsd = estimateCost(
+                  {
+                    uncachedInput: acc.uc,
+                    cacheRead: acc.cr,
+                    cacheCreate1h: subCch1h ? acc.cc : 0,
+                    cacheCreate5m: subCch1h ? 0 : acc.cc,
+                    output: acc.out,
+                  },
+                  sp,
+                );
+                t.tokens = {
+                  in: acc.uc + acc.cc,
+                  out: acc.out,
+                  cacheRead: acc.cr,
+                  cacheCreate: acc.cc,
+                  usd: subUsd,
+                };
+                onAktiviteTokens?.(subParentId, t.tokens);
+              }
+            }
           }
           // Fill in the tool_use input detail (the instant event already passed).
           const content = (msg as { message?: { content?: unknown[] } }).message?.content;
@@ -1282,6 +1340,11 @@ export function createRunChiefAttempt(deps: RunChiefAttemptDeps): RunChiefAttemp
                       (typeof inp.description === "string" && inp.description) ||
                       "";
                     agentDelegations.set(b.id, { specialist: sub, task });
+                    // Fix: native Agent/Task delegation now drives the left-sidebar
+                    // status dot too. Previously only the explicit delegate_to_specialist
+                    // tool emitted delege_basladi/bitti, so specialists invoked via the
+                    // native Agent tool showed "Idle" in the sidebar even while running.
+                    emit("delege_basladi", { agent: sub, task });
                     // Write the task to the specialist's persistent chat IMMEDIATELY (at
                     // tool_use time) — so WHILE the specialist runs (without waiting for
                     // tool_result) the modal shows "task assigned + running". The result
@@ -1386,6 +1449,9 @@ export function createRunChiefAttempt(deps: RunChiefAttemptDeps): RunChiefAttemp
                   const deleg = agentDelegations.get(b.tool_use_id);
                   if (deleg) {
                     agentDelegations.delete(b.tool_use_id);
+                    // Sidebar status dot: native Agent delegation finished → back to idle
+                    // (or error). Pairs with the delege_basladi emitted at tool_use time.
+                    emit("delege_bitti", { agent: deleg.specialist, isError: !!t.hata });
                     try {
                       // The task (ajan_komut) was ALREADY written at tool_use time; here
                       // only add the specialist's result. Via refreshStatus the modal

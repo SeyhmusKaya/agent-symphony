@@ -100,6 +100,19 @@
     return flat.length > 260 ? "…" + flat.slice(-260) : flat;
   });
 
+  // Full retained activity trail (step-by-step tools + text the specialist produced
+  // live). Shown in the expandable panel; whitespace kept (pre-wrap) so the step
+  // arrows ("→ Write") read as a list. Empty until the subagent streams anything.
+  const fullIlerleme = $derived((tool as { ilerleme?: string }).ilerleme ?? "");
+  // Expandable live-activity panel — COLLAPSED by default; click to watch what the
+  // specialist is doing + its token spend, live.
+  let activityOpen = $state(false);
+  function toggleActivity(e: MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    activityOpen = !activityOpen;
+  }
+
   // Avatar letter — first meaningful character of subagentType, fallback "A".
   const avatarChar = $derived.by(() => {
     const s = subagentType.trim();
@@ -176,6 +189,21 @@
         <span>{usd.toFixed(usd < 0.01 ? 4 : 3)}</span>
       </span>
     {/if}
+    {#if fullIlerleme}
+      <button
+        class="sa-activity-toggle"
+        class:on={activityOpen}
+        onclick={toggleActivity}
+        title="Show what the specialist is doing, live"
+        aria-expanded={activityOpen}
+      >
+        <Icon name="activity" size={10} stroke={2.2} />
+        <span>Activity</span>
+        <svg class="sa-chev" viewBox="0 0 24 24" width="11" height="11" aria-hidden="true">
+          <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+    {/if}
     {#if onInspect}
       <button
         class="sa-detay"
@@ -185,6 +213,22 @@
       >Detail</button>
     {/if}
   </div>
+
+  {#if activityOpen && fullIlerleme}
+    <!-- Expandable live activity — full step trail + token spend. Streams live. -->
+    <div class="sa-activity">
+      <div class="sa-activity-bar">
+        <span class="sa-activity-k">live activity</span>
+        {#if running}
+          <Icon name="loader" size={9} stroke={2.4} spin={true} />
+        {/if}
+        <span class="sa-activity-tok">
+          {fmtTokenShort(promptIn)}&darr; {fmtTokenShort(tokenOut)}&uarr;{#if usd > 0} · ${usd.toFixed(usd < 0.01 ? 4 : 3)}{/if}
+        </span>
+      </div>
+      <pre class="sa-activity-log">{fullIlerleme}</pre>
+    </div>
+  {/if}
 
   {#if preview}
     <div class="sa-preview">
@@ -426,6 +470,84 @@
     color: var(--arc-primary, #0F766E);
     border-color: var(--arc-primary, #0F766E);
     background: color-mix(in srgb, var(--arc-primary, #0F766E) 8%, transparent);
+  }
+
+  /* ---- Activity toggle + expandable live panel ---- */
+  .sa-activity-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: transparent;
+    border: 1px solid var(--arc-border);
+    border-radius: 5px;
+    padding: 2px 8px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--arc-text-soft);
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .sa-activity-toggle:hover,
+  .sa-activity-toggle.on {
+    color: var(--arc-primary-strong, #0F766E);
+    border-color: color-mix(in srgb, var(--arc-primary, #0F766E) 45%, var(--arc-border));
+    background: color-mix(in srgb, var(--arc-primary, #0F766E) 8%, transparent);
+  }
+  .sa-activity-toggle :global(svg) {
+    color: var(--arc-text-faint);
+  }
+  .sa-activity-toggle.on :global(svg) {
+    color: var(--arc-primary, #0F766E);
+  }
+  .sa-chev {
+    transition: transform 0.18s var(--arc-ease, ease);
+  }
+  .sa-activity-toggle.on .sa-chev {
+    transform: rotate(180deg);
+  }
+  .sa-activity {
+    border: 1px solid color-mix(in srgb, var(--arc-primary, #0F766E) 22%, var(--arc-border));
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--arc-primary, #0F766E) 4%, var(--arc-bg, #ffffff));
+    overflow: hidden;
+  }
+  .sa-activity-bar {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 10px;
+    border-bottom: 1px dashed color-mix(in srgb, var(--arc-primary, #0F766E) 20%, var(--arc-border));
+    background: color-mix(in srgb, var(--arc-primary, #0F766E) 6%, transparent);
+  }
+  .sa-activity-k {
+    font-family: var(--arc-mono, monospace);
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--arc-text-faint);
+  }
+  .sa-activity-bar :global(svg) {
+    color: var(--arc-primary, #0F766E);
+  }
+  .sa-activity-tok {
+    margin-left: auto;
+    font-family: var(--arc-mono, monospace);
+    font-size: 10px;
+    color: var(--arc-text-soft);
+  }
+  .sa-activity-log {
+    margin: 0;
+    padding: 8px 10px;
+    max-height: 240px;
+    overflow-y: auto;
+    font-family: var(--arc-mono, monospace);
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--arc-text);
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   /* ---- Result preview ---- */
