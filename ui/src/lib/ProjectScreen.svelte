@@ -6,7 +6,7 @@
   } from "$lib/store.svelte";
   import Icon from "$lib/icons/Icon.svelte";
   import Badge from "$lib/ui/Badge.svelte";
-  import { MODELS, EFFORTS } from "$lib/router/helpers.js";
+  import { EFFORTS } from "$lib/router/helpers.js";
   import Button from "$lib/ui/Button.svelte";
   import Avatar from "$lib/ui/Avatar.svelte";
   import EmptyState from "$lib/ui/EmptyState.svelte";
@@ -553,7 +553,7 @@
                       selectedAgentMeta.effort,
                     )}
                 >
-                  {#each MODELS as m (m)}
+                  {#each session.availableModels as m (m)}
                     <option value={m}>{m}</option>
                   {/each}
                 </select>

@@ -5,6 +5,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { appDataDir } from "./fleet.js";
 import type { Effort } from "./effort.js";
+import { defaultModelForRole } from "./providers.js";
 
 export interface ChiefPrefs {
   model: string;
@@ -22,7 +23,9 @@ export function loadChiefPrefs(projectId: string): ChiefPrefs {
   // Mimar/Sef/Advisor hepsi ayni default. Uzmanlar kendi specialist tarafindan
   // claude-opus-4-8-fast[1m] + medium ile spawn edilir (3x ucuz + 2.5x hizli).
   // Kullanici UI'dan setChiefModel ile her zaman degistirebilir.
-  const def: ChiefPrefs = { model: "claude-opus-4-8", effort: "high", fast: false };
+  // Provider=deepseek ise sef/mimar/danisman default'u v4-pro; aksi halde
+  // opus-4-8 (mevcut sistem DEGISMEZ).
+  const def: ChiefPrefs = { model: defaultModelForRole("sef"), effort: "high", fast: false };
   const file = chiefPrefsFilePath();
   if (!existsSync(file)) return def;
   try {

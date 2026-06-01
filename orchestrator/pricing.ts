@@ -78,6 +78,25 @@ const HAIKU_45: ModelPrice = {
   cacheWrite5m: 1.25,
   cacheWrite1h: 2,
 };
+// DeepSeek V4 (doc: api-docs.deepseek.com/quick_start/pricing). DeepSeek
+// otomatik context caching kullanir — ayri "cache write" ucreti YOK; ilk kez
+// gorulen token input-miss fiyatindan, tekrar gorulen cache-hit fiyatindan
+// faturalanir. ModelPrice shape'ine uydurmak icin cacheWrite5m/1h = input-miss
+// (yaklasik; UI $ gosterimi gercege yakin kalir).
+const DEEPSEEK_PRO: ModelPrice = {
+  input: 0.435, // cache miss
+  output: 0.87,
+  cacheRead: 0.003625, // cache hit
+  cacheWrite5m: 0.435,
+  cacheWrite1h: 0.435,
+};
+const DEEPSEEK_FLASH: ModelPrice = {
+  input: 0.14, // cache miss
+  output: 0.28,
+  cacheRead: 0.0028, // cache hit
+  cacheWrite5m: 0.14,
+  cacheWrite1h: 0.14,
+};
 
 // Model adina gore fiyat sec. Eski API: tek arg, [1m] eki varsa hep 1m
 // tier (yanlis — Anthropic gercekte sadece total context >200k oldugunda
@@ -97,6 +116,10 @@ export function priceForModel(
   opts: PriceOpts = {},
 ): ModelPrice {
   const m = modelName.toLowerCase();
+  // DeepSeek: 1m beta / opus tier mantigi gecerli degil — sabit fiyat.
+  if (m.includes("deepseek")) {
+    return m.includes("pro") ? DEEPSEEK_PRO : DEEPSEEK_FLASH;
+  }
   // Fix 104: is1m fallback — opus modelleri daima 1m kullanir, sonnet/haiku
   // daima 200k. Explicit opt verilirse override.
   const explicit1m = opts.is1m;

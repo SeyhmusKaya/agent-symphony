@@ -72,8 +72,8 @@
   const tone = $derived(usdTone(liveUsd));
   const tooltip = $derived(
     `in ${fmtTokens(liveIn)} · ` +
-    `cache_read ${fmtTokens(liveCacheRead)} (~$${(liveCacheRead * 0.6 / 1_000_000).toFixed(4)}) · ` +
-    `cache_create_1h ${fmtTokens(liveCacheCreate)} · ` +
+    `cache_read ${fmtTokens(liveCacheRead)} · ` +
+    `cache_create ${fmtTokens(liveCacheCreate)} · ` +
     `fresh ${fmtTokens(liveUncached)} · ` +
     `out ${fmtTokens(liveOut)}`,
   );

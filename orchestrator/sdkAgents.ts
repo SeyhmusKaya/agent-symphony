@@ -13,6 +13,7 @@ import type { AgentDefinition } from "@anthropic-ai/claude-agent-sdk";
 import type { AgentRegistry, SpecialistDef } from "./registry.js";
 import { specialistSystemPrompt } from "./prompts.js";
 import { loadGlobalSkills, buildSkillPromptBlockFromNames } from "./skills.js";
+import { modelDisplayName } from "./providers.js";
 
 // Fix 104: Model adi -> Anthropic API'ye gidecek slug.
 // - "-fast" / "[fast]": Anthropic 'fast' adli model tanimiyor (404).
@@ -21,6 +22,9 @@ import { loadGlobalSkills, buildSkillPromptBlockFromNames } from "./skills.js";
 // - "[1m]": Anthropic opus icin 1m context alias. Opus daima 1m kullanildigi
 //   icin model adinda yoksa otomatik eklenir; sonnet/haiku icin striplenir.
 function cleanModelSlug(model: string): string {
+  // DeepSeek slug'lari (deepseek-v4-pro / -flash) AYNEN gider — [1m]/-fast
+  // transformlari Anthropic'e ozgu, DeepSeek'te 400 verir.
+  if (/deepseek/i.test(model)) return model.trim();
   let s = model
     .replace(/\s*\[\s*fast\s*\]/gi, "")
     .replace(/-fast\b/gi, "")
@@ -104,7 +108,7 @@ function specToAgent(
 
   return {
     description: spec.role || `${spec.name} uzmani`,
-    prompt: specialistSystemPrompt(spec.name, spec.role) + skillBlock,
+    prompt: specialistSystemPrompt(spec.name, spec.role, modelDisplayName(spec.model)) + skillBlock,
     tools,
     disallowedTools,
     model: cleanModelSlug(spec.model),

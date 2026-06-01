@@ -12,6 +12,7 @@ import type { ErrorTracker } from "./errorTracker.js";
 import type { AutonomousManager } from "./autonomousMode.js";
 import type { CostTracker, PauseTracker } from "./state.js";
 import type { Effort } from "./effort.js";
+import { availableModels, resolveProvider } from "./providers.js";
 
 export interface StatusBuilderDeps {
   isGlobal: boolean;
@@ -84,6 +85,10 @@ export function createStatusBuilder(deps: StatusBuilderDeps): () => Record<strin
         effort: sessionEffortFor(chief.getActiveId()),
         fast: sessionFastFor(chief.getActiveId()),
       },
+      // Hibrit provider: UI model picker'i bu listeden render eder (deepseek
+      // key varsa v4-pro/flash; OAuth/anthropic-key varsa claude seti).
+      availableModels: availableModels(),
+      provider: resolveProvider(),
       chat: getChatLog(),
       context: getLastContext(),
       // P1.33: per-session running indicator. UI runningSessions.includes(active)

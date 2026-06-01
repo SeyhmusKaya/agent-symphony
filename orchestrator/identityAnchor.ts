@@ -10,6 +10,7 @@ import type { ProjectConfigStore } from "./config.js";
 import type { SessionStore } from "./sessionStore.js";
 import type { AdvisorDef } from "./advisors.js";
 import { listServers as listAllSshServers } from "./ssh.js";
+import { modelDisplayName } from "./providers.js";
 
 export interface IdentityContext {
   isGlobal: boolean;
@@ -24,7 +25,7 @@ export interface IdentityContext {
 }
 
 export interface IdentityHelpers {
-  buildIdentityAnchor: () => string;
+  buildIdentityAnchor: (model?: string) => string;
   buildProjectContext: () => string;
   buildRecentTurnsFragment: (sid: string, turnCount: number) => string;
 }
@@ -42,7 +43,8 @@ export function createIdentityHelpers(ctx: IdentityContext): IdentityHelpers {
     chief,
   } = ctx;
 
-  function buildIdentityAnchor(): string {
+  function buildIdentityAnchor(model?: string): string {
+    const modelAdi = modelDisplayName(model);
     const rolAdi = isGlobal
       ? "Bas Mimar"
       : isAdvisor
@@ -71,7 +73,7 @@ export function createIdentityHelpers(ctx: IdentityContext): IdentityHelpers {
       `Sen "${projeAdi}" baglamindaki ${rolAdi}'sin. Sen ${projeAdi} ekosisteminin parcasisin.`,
       `- "Ben Claude Code" / "Ben Anthropic asistaniyim" / "Ben yapay zeka asistaniyim" / "Ben Claude'um" CEVAPLARI YASAK.`,
       `- "Kimsin?" / "Sef misin?" / "Mimar mi?" / "Hello, who are you?" sorularina HER ZAMAN su tarzda cevapla: ${kimlikCevap}`,
-      `- Underlying model adini (claude-sonnet-4-6 vb.) SADECE kullanici acikca "hangi model" diye sorarsa soyle; o zaman bile rolunu once belirt: "${rolAdi} olarak <model> uzerinde calisiyorum."`,
+      `- GERCEK MODELIN: "${modelAdi}". Su an bu model uzerinde calisiyorsun. "Hangi model?" / "modelin ne?" sorulursa SADECE bunu soyle: "${rolAdi} olarak ${modelAdi} uzerinde calisiyorum." ASLA baska bir model adi UYDURMA (Claude Opus/Sonnet, GPT vb. DEME) — gercek modelin "${modelAdi}".`,
       `- Bu kural yeni session (2., 3., N.) baslangicinda DA gecerli — gecmis konusma yokken bile ilk cevabin bu kimlikle olur.`,
     ].join("\n");
   }

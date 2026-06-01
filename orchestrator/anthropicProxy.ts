@@ -20,8 +20,23 @@ import * as http from "node:http";
 import * as https from "node:https";
 import * as zlib from "node:zlib";
 import { CACHE_BOUNDARY } from "./cacheMarker.js";
+import {
+  isDeepSeekModel,
+  DEEPSEEK_HOST,
+  DEEPSEEK_PATH_PREFIX,
+} from "./providers.js";
 
 const UPSTREAM_HOST = "api.anthropic.com";
+
+// DeepSeek API key (runtime). main.ts boot'ta providers.json'dan setDeepSeekKey
+// ile gelir. Bos ise hibrit DeepSeek routing devre disi (Claude-only davranis).
+let deepseekKey = "";
+export function setDeepSeekKey(key: string): void {
+  deepseekKey = (key ?? "").trim();
+}
+export function getDeepSeekKey(): string {
+  return deepseekKey;
+}
 const BETA_NAME = "extended-cache-ttl-2025-04-11";
 // Fix 105: cache TTL artik env-controlled. Default "5m" — proxy 5m gonderir,
 // backend pricing.ts cchIs1h=false ile uyumlu (cost gosterimi gercege esit).
@@ -118,6 +133,7 @@ type MessagesBody = {
   tools?: AnyBlock[];
   messages?: AnyMessage[];
   service_tier?: "auto" | "standard_only";
+  model?: string;
 };
 
 // Fast mode: aktifse body'ye service_tier:"auto" enjekte et (priority varsa
@@ -571,22 +587,37 @@ async function handleRequest(
   delete upstreamHeaders["proxy-connection"];
 
   let didModify = false;
+  // Hibrit provider routing: body.model "deepseek*" + key tanimliysa istek
+  // DeepSeek'in Anthropic-uyumlu endpoint'ine gider. Claude modeli -> mevcut
+  // Anthropic davranisi (OAuth + 1h cache + beta) AYNEN korunur.
+  let routeDeepSeek = false;
   if (isMessages && method === "POST" && bodyBuf.length > 0) {
     try {
       const body = JSON.parse(bodyBuf.toString("utf8")) as MessagesBody;
+      routeDeepSeek = !!deepseekKey && isDeepSeekModel(body.model);
       const remindersStripped = stripUselessReminders(body);
       if (remindersStripped) stats.strippedReminders++;
       // P1.7: tools listesini stabilize et — strip transient/unstable, sort.
       stabilizeTools(body);
-      const cacheChanged = injectCacheControl(body);
-      // FAST MODE: fast toggle aciksa service_tier:"auto" ekle.
-      const tierChanged = injectServiceTier(body);
-      if (remindersStripped || cacheChanged || tierChanged) {
+      if (routeDeepSeek) {
+        // DeepSeek otomatik context caching kullanir — Anthropic'e ozgu
+        // ephemeral cache_control bloklari 400 verir. Hepsini strip et, KENDI
+        // cache_control'umuzu EKLEME, service_tier/anthropic-beta EKLEME.
+        stripCacheControl(body);
         didModify = true;
-        if (cacheChanged) stats.modifiedRequests++;
         bodyBuf = Buffer.from(JSON.stringify(body), "utf8");
         upstreamHeaders["content-length"] = String(bodyBuf.length);
-        upstreamHeaders["anthropic-beta"] = mergeBetaHeader(clientReq.headers);
+      } else {
+        const cacheChanged = injectCacheControl(body);
+        // FAST MODE: fast toggle aciksa service_tier:"auto" ekle.
+        const tierChanged = injectServiceTier(body);
+        if (remindersStripped || cacheChanged || tierChanged) {
+          didModify = true;
+          if (cacheChanged) stats.modifiedRequests++;
+          bodyBuf = Buffer.from(JSON.stringify(body), "utf8");
+          upstreamHeaders["content-length"] = String(bodyBuf.length);
+          upstreamHeaders["anthropic-beta"] = mergeBetaHeader(clientReq.headers);
+        }
       }
       // Fix 46: her zaman acik telemetri — immutable system block + tools hash
       // log. Cache invalidation tespiti icin: ardisik turlerde immHash AYNI
@@ -710,12 +741,24 @@ async function handleRequest(
     }
   }
 
+  // Upstream secimi: DeepSeek isteginde host + path prefix + auth swap.
+  let upstreamHost = UPSTREAM_HOST;
+  let upstreamPath = url;
+  if (routeDeepSeek) {
+    upstreamHost = DEEPSEEK_HOST;
+    upstreamPath = DEEPSEEK_PATH_PREFIX + url; // /anthropic + /v1/messages
+    upstreamHeaders.host = DEEPSEEK_HOST;
+    // OAuth bearer -> DeepSeek x-api-key. anthropic-beta DeepSeek'te gecersiz.
+    delete upstreamHeaders["authorization"];
+    delete upstreamHeaders["anthropic-beta"];
+    upstreamHeaders["x-api-key"] = deepseekKey;
+  }
   const upstreamReq = https.request(
     {
       method,
-      hostname: UPSTREAM_HOST,
+      hostname: upstreamHost,
       port: 443,
-      path: url,
+      path: upstreamPath,
       headers: upstreamHeaders,
     },
     (upstreamRes) => {

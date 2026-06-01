@@ -7,6 +7,7 @@ import {
   buildCodeGraphMcpServer,
   CODEGRAPH_TOOL_NAMES_FOR_SUBAGENTS,
 } from "./codegraph/mcpTools.js";
+import { resolveProvider, DEEPSEEK_PRO, DEEPSEEK_FLASH } from "./providers.js";
 
 // Genel amacli izole gorev yurutucu — Claude Code "Task tool" muadili.
 // Sef 5+ tool gerektiren is icin buna delege eder: izole SDK oturumu,
@@ -55,7 +56,12 @@ export async function runTaskAgent(
   gorev: string,
   model: TaskModelKey = "sonnet",
 ): Promise<TaskAgentResult> {
-  const modelId = MODEL_MAP[model] ?? MODEL_MAP.sonnet;
+  // Provider=deepseek: task subagent (worker sinifi) -> opus istegi v4-pro,
+  // digerleri v4-flash. Aksi halde mevcut Anthropic slug.
+  let modelId = MODEL_MAP[model] ?? MODEL_MAP.sonnet;
+  if (resolveProvider() === "deepseek") {
+    modelId = model === "opus" ? DEEPSEEK_PRO : DEEPSEEK_FLASH;
+  }
   const prompt = `[${opis}]\n\n${gorev}`;
   try {
     const codeGraphServer = buildCodeGraphMcpServer(getActiveCodeGraph);

@@ -112,7 +112,7 @@ export interface RunChiefAttemptDeps {
 
   // Module helpers
   emit: (type: string, payload: Record<string, unknown>) => void;
-  buildIdentityAnchor: () => string;
+  buildIdentityAnchor: (model?: string) => string;
   buildProjectContext: () => string;
   sessionModelFor: (sid: string) => string;
   sessionEffortFor: (sid: string) => Effort;
@@ -486,7 +486,7 @@ export function createRunChiefAttempt(deps: RunChiefAttemptDeps): RunChiefAttemp
     // (1 native success / 7 backstops). Pull to 150k: leave native a ~35k band (150k
     // window < 185k backstop) so it compacts between turns = the session is preserved.
     // CC also compacts at ~80% (160k); 150k is equivalent/earlier-safe.
-    const standingCompactWindow = /opus/i.test(sessionModel) ? 700_000 : 150_000;
+    const standingCompactWindow = isOpus(sessionModel) ? 700_000 : 150_000;
     const effectiveCompactWindow: number | undefined = !NATIVE_COMPACT
       ? undefined
       : forceCompactThisTurn
@@ -544,8 +544,8 @@ export function createRunChiefAttempt(deps: RunChiefAttemptDeps): RunChiefAttemp
         ? BG_DELEGE_NOTE
         : "";
     const systemPromptStr = isAdvisor
-      ? baseChiefPrompt + buildIdentityAnchor() + TOOL_CATALOG_NOTE + skillBlock + compactSys + CACHE_BOUNDARY + memSys + planSys
-      : baseChiefPrompt + buildIdentityAnchor() + buildProjectContext() + PROMPT_MUH + N8N_NOTE + CODEGRAPH_HINT + TOOL_CATALOG_NOTE + bgNote + skillBlock +
+      ? baseChiefPrompt + buildIdentityAnchor(sessionModel) + TOOL_CATALOG_NOTE + skillBlock + compactSys + CACHE_BOUNDARY + memSys + planSys
+      : baseChiefPrompt + buildIdentityAnchor(sessionModel) + buildProjectContext() + PROMPT_MUH + N8N_NOTE + CODEGRAPH_HINT + TOOL_CATALOG_NOTE + bgNote + skillBlock +
         compactSys +
         CACHE_BOUNDARY +
         memSys + planSys;

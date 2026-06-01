@@ -196,6 +196,8 @@ export interface ProjectStatus {
   agents?: AgentInfo[];
   queue?: QueueItem[];
   chief?: { model: string; effort: string; fast?: boolean };
+  availableModels?: string[];
+  provider?: string;
   chat?: ChatMessage[];
   context?: number;
   paused?: boolean;

@@ -4,7 +4,7 @@
 
 # Architect — Agent Symphony
 
-### A hierarchical multi-agent orchestrator for the Claude Agent SDK
+### A hierarchical multi-agent orchestrator for the Claude Agent SDK — multi-provider (Claude + DeepSeek)
 
 *One conductor. A company of AI agents. You stay in command.*
 
@@ -54,7 +54,7 @@ Think of it as **mission control for a team of Claude agents** — purpose-built
 
 If you've used **Claude Code**, **CrewAI**, **AutoGen**, or **LangGraph**: those are frameworks and CLIs you *script*. **Architect — Agent Symphony** is a **desktop cockpit where the orchestration *is* the product** — you watch and command a standing organization of agents across real projects, with live cost and context visibility, instead of writing orchestration code. It's built directly on the official **[Claude Agent SDK](https://docs.anthropic.com/en/api/agent-sdk)** (in-process, no separate CLI), so you get Claude-Code-grade behavior with a multi-agent, multi-project UI on top.
 
-**Keywords:** Claude agent orchestration · multi-agent AI · agentic workflows · autonomous coding agents · Claude Code alternative UI · AI software team · MCP tools.
+**Keywords:** Claude agent orchestration · DeepSeek agent orchestration · multi-provider LLM agents · multi-agent AI · agentic workflows · autonomous coding agents · Claude Code alternative UI · DeepSeek V4 desktop app · AI software team · MCP tools.
 
 ---
 
@@ -118,6 +118,13 @@ Agents talk to each other (cross-agent messaging), delegate in parallel, and the
 - **Prompt-cache-aware design** — stable tool sets and cache-friendly prompt layout keep cache hit rates high (cheap reads instead of expensive rewrites).
 - **Lazy tool groups** — agents load tool sets on demand (`load_toolset`) to keep the per-turn token floor low.
 
+### 🔀 Multi-provider model routing (Claude + DeepSeek)
+- **Two providers, one cockpit** — run agents on **Anthropic Claude** (Opus / Sonnet / Haiku) **or DeepSeek V4** (`deepseek-v4-pro` / `deepseek-v4-flash`). Pick the model per agent from the same dropdown.
+- **Automatic provider priority** — if a DeepSeek API key is set, DeepSeek is used first; otherwise an Anthropic API key; otherwise your Claude Pro/Max login. No code changes.
+- **Sensible role defaults on DeepSeek** — chiefs, the head architect and advisors default to **DeepSeek V4 Pro**, one-shot specialists/workers to the cheaper **DeepSeek V4 Flash**.
+- **How it works** — DeepSeek is reached through its **Anthropic-compatible endpoint** (`https://api.deepseek.com/anthropic`), so the same Agent-SDK request format, tool calls, thinking mode and 1M-token context window work unchanged. Per-model, per-token USD cost is tracked correctly for each provider.
+- **Switch live** — change a running agent's model from Claude to DeepSeek (or back) mid-session; routing follows the selected model on every request.
+
 ### 🕸️ CodeGraph — semantic code intelligence
 A built-in code graph over your repos (powered by **tree-sitter** for TypeScript, JavaScript, Python, PHP, C#, Dart & Svelte + **SQLite FTS** + embeddings):
 - `code_search`, `code_node`, `code_callers`, `code_callees`, `code_impact`, `code_imports`, `code_files`, `code_stats`
@@ -152,7 +159,8 @@ Built with **Tauri + SvelteKit** — a fast, native desktop cockpit (not a brows
 
 | Layer | Tech |
 |-------|------|
-| **Agents** | [Claude Agent SDK](https://docs.anthropic.com/en/api/agent-sdk) (in-process), Anthropic Claude (Opus / Sonnet / Haiku) |
+| **Agents** | [Claude Agent SDK](https://docs.anthropic.com/en/api/agent-sdk) (in-process) |
+| **Model providers** | Anthropic Claude (Opus / Sonnet / Haiku) · DeepSeek V4 (Pro / Flash) via the Anthropic-compatible endpoint |
 | **Backend** | TypeScript on `tsx`, WebSocket (`ws`), Zod |
 | **Code intelligence** | tree-sitter (7 languages) + `better-sqlite3` (FTS) + embeddings |
 | **Automation** | Playwright / Patchright |
@@ -198,14 +206,15 @@ cd ui && npm run check     # UI (svelte-check)
 
 ---
 
-## 🔑 Authentication — works with your Claude plan *or* an API key
+## 🔑 Authentication — Claude plan, Anthropic key, *or* DeepSeek key
 
-Architect — Agent Symphony runs on the official **Claude Agent SDK**, so it authenticates exactly like Claude Code. You have two options:
+Architect — Agent Symphony runs on the official **Claude Agent SDK** and supports **two model providers**. It picks a provider in this priority order:
 
-- 🟢 **Claude Pro / Max subscription** *(recommended for most people)* — log in once with the Claude CLI (`claude login`) and pick your Claude.ai account. Usage counts against your existing **Pro/Max quota — no API key, no per-token bill.**
+- 🟣 **DeepSeek API key** *(highest priority when set)* — add your DeepSeek key in the in-app **API keys** panel (stored locally in `providers.json`, never committed). Agents then run on **DeepSeek V4 Pro / Flash** through DeepSeek's Anthropic-compatible endpoint. Cheapest path; Claude models stay available in the dropdown if you also have a Claude login.
+- 🟢 **Claude Pro / Max subscription** *(recommended for Claude users)* — log in once with the Claude CLI (`claude login`). Usage counts against your existing **Pro/Max quota — no API key, no per-token bill.**
 - 🔵 **Anthropic API key** *(pay-per-token)* — set `ANTHROPIC_API_KEY`. Best for teams/automation with Console billing.
 
-> ⚠️ If `ANTHROPIC_API_KEY` is set in your environment, it **takes precedence** over your subscription. To use your Pro/Max plan, leave that variable unset (and run `claude logout` → `claude login` with the Pro/Max account).
+> ⚠️ If `ANTHROPIC_API_KEY` is set in your environment, it **takes precedence** over your Claude subscription. To use your Pro/Max plan for Claude models, leave that variable unset (and run `claude logout` → `claude login` with the Pro/Max account). The DeepSeek key is managed separately in-app and only affects DeepSeek-model requests.
 
 The app's local proxy only optimizes prompt caching — it **never touches your credentials or the OAuth refresh path**, so both auth modes work out of the box.
 
@@ -213,7 +222,7 @@ The app's local proxy only optimizes prompt caching — it **never touches your 
 
 ## ⚙️ Configuration
 
-- **Auth** — a Claude Pro/Max login *or* `ANTHROPIC_API_KEY` (see [Authentication](#-authentication--works-with-your-claude-plan-or-an-api-key)).
+- **Auth** — a DeepSeek key (in-app), a Claude Pro/Max login, *or* `ANTHROPIC_API_KEY` (see [Authentication](#-authentication--claude-plan-anthropic-key-or-deepseek-key)).
 - **`secrets.local.json`** — optional SSH / web-auth / relay credentials (git-ignored, never committed). See `secrets.local.json.example`.
 - **Feature flags** (environment variables) — toggle optional subsystems such as long-TTL prompt cache, async delegation and native compaction.
 
@@ -224,7 +233,7 @@ The app's local proxy only optimizes prompt caching — it **never touches your 
 ## 🗺️ Roadmap
 
 - Cross-platform desktop builds (macOS / Linux)
-- Pluggable model providers
+- ✅ Pluggable model providers — **DeepSeek V4 shipped**; more providers coming
 - Richer autonomous-mode controls
 - More CodeGraph languages
 

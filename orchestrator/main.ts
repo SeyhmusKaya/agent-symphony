@@ -27,7 +27,8 @@ import {
   GLOBAL_CHIEF_PROMPT,
 } from "./prompts.js";
 import { setPlugins, setAnthropicProxyBaseUrl } from "./runtime.js";
-import { startAnthropicProxy, getProxyStats, setProxyLogger, setFastMode } from "./anthropicProxy.js";
+import { startAnthropicProxy, getProxyStats, setProxyLogger, setFastMode, setDeepSeekKey } from "./anthropicProxy.js";
+import { loadProviders, saveProviders, is1mModel } from "./providers.js";
 import {
   Fleet,
   GLOBAL_ID,
@@ -352,6 +353,13 @@ setPlugins([...defaultPluginPaths(), ...projectConfig.get().plugins]);
 // a stdio:ignore child. For cache hit/miss analysis, proxy_cache events are
 // written to the project log file.
 setProxyLogger((msg, meta) => logger.info(`proxy:${msg}`, meta ?? {}));
+// Hibrit DeepSeek routing: providers.json'daki key'i proxy'ye ver. Bos ise
+// proxy DeepSeek'e yonlendirmez (Claude-only davranis korunur).
+try {
+  setDeepSeekKey(loadProviders().deepseekKey ?? "");
+} catch {
+  /* providers.json yok/bozuk — DeepSeek pasif */
+}
 void startAnthropicProxy()
   .then((proxy) => {
     setAnthropicProxyBaseUrl(proxy.baseUrl);
@@ -602,8 +610,11 @@ const errorTracker = new ErrorTracker({
 // ---------------------------------------------------------------------------
 
 // Fix 104: Opus always 1M, Sonnet/Haiku always 200k. The old [1m] suffix is not needed.
+// DeepSeek entegrasyonu: deepseek v4 de 1M context -> is1mModel ile birlestirildi.
+// Bu fonksiyon SADECE 1M-context/auto-compact karari + pricing is1m icin kullanilir;
+// deepseek pricing zaten priceForModel'de duz (is1m yok sayilir).
 function isOpus(m: string): boolean {
-  return /claude-opus/i.test(m);
+  return is1mModel(m);
 }
 
 // Per-session model/effort resolution. If the session has a stored model use
@@ -933,6 +944,25 @@ const server = new ArchitectServer(port, bus, {
   onRestartSelf: (opts) => {
     emit("ajan_durum_degisti", { agent: "sef", durum: "yeniden_baslatiliyor" });
     spawnControlledRestart({ port, emit, not: opts.not, devamGorevi: opts.devamGorevi });
+  },
+  // Provider key'leri kaydet (providers.json) + bu orchestrator'in proxy'sine
+  // CANLI uygula (DeepSeek routing hemen aktif). Diger orchestrator process'leri
+  // (mimar/advisor/diger proje sefleri) providers.json'u boot'ta okur -> bir
+  // sonraki restart'ta gecerli olur. Bos string = key temizle.
+  onSetProviders: (deepseekKey, anthropicKey) => {
+    try {
+      saveProviders({
+        deepseekKey: deepseekKey.trim() || undefined,
+        anthropicKey: anthropicKey.trim() || undefined,
+      });
+      setDeepSeekKey(deepseekKey.trim());
+      logger.info("providers_updated", {
+        deepseek: deepseekKey ? "set" : "clear",
+        anthropic: anthropicKey ? "set" : "clear",
+      });
+    } catch (e) {
+      logger.error("providers_update_failed", { mesaj: (e as Error).message });
+    }
   },
 });
 

@@ -16,7 +16,7 @@
   import Button from "$lib/ui/Button.svelte";
   import NavRail from "$lib/router/NavRail.svelte";
   import TabBar from "$lib/router/TabBar.svelte";
-  import { MODELS, EFFORTS, AGENTS, modelShort, relativeTime } from "$lib/router/helpers.js";
+  import { EFFORTS, AGENTS, modelShort, relativeTime } from "$lib/router/helpers.js";
   import { agentIcon } from "$lib/ui/agentVisual";
   import { ProjectSession } from "$lib/store.svelte";
   import { notifyAgentIdle, onAgentNotificationClick, takePendingAgentNav } from "$lib/notify";
@@ -576,7 +576,7 @@
                     ></div>
                     <div class="ag-mm arc-card" role="none" onclick={(e) => e.stopPropagation()}>
                       <span class="arc-caption">Model</span>
-                      {#each MODELS as m (m)}
+                      {#each sessions[mimar.key].availableModels as m (m)}
                         <button
                           class="ag-mo"
                           class:sel={sessions[mimar.key].chiefModel === m}

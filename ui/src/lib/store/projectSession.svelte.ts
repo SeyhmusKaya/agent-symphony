@@ -233,6 +233,14 @@ export class ProjectSession {
   // Fast mode (priority service tier). When active the backend proxy injects
   // service_tier:"auto" — fast if priority capacity is available, otherwise standard without error.
   chiefFast = $state(false);
+  // Hibrit provider: backend status'tan gelen aktif provider + sunulan model
+  // listesi. deepseek key varsa v4-pro/flash dahil; aksi halde claude seti.
+  availableModels = $state<string[]>([
+    "claude-opus-4-8",
+    "claude-opus-4-7",
+    "claude-sonnet-4-6",
+  ]);
+  provider = $state<string>("anthropic-oauth");
   // Agent name — shown in the notification body in "<agent>: ..." format.
   // The caller (ProjectScreen, GlobalChief, +page) sets it before connect.
   agentDisplayName = $state("Agent");
@@ -254,7 +262,8 @@ export class ProjectSession {
   // Fix 104: Opus always 1M, Sonnet/Haiku always 200k. The old [1m] suffix logic
   // was removed. Same semantics as the backend chiefContextWindow().
   get contextWindow(): number {
-    return /claude-opus/i.test(this.chiefModel) ? 1_000_000 : 200_000;
+    // Opus + DeepSeek v4 = 1M context; sonnet/haiku = 200k.
+    return /claude-opus|deepseek/i.test(this.chiefModel) ? 1_000_000 : 200_000;
   }
 
   // P1.28: "running, but IS it running on the actively shown session?" The UI
@@ -634,6 +643,17 @@ export class ProjectSession {
     this.chiefFast = fast;
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ kind: "sef_model", model, effort, fast }));
+    }
+  }
+
+  // Provider API key'leri backend'e gonder (providers.json + canli proxy). Key
+  // degeri tek yon: UI'dan backend'e gider, status'ta GERI DONMEZ (gizli kalir).
+  // Bos string = o key'i temizle.
+  setProviders(deepseekKey: string, anthropicKey: string): void {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(
+        JSON.stringify({ kind: "set_providers", deepseekKey, anthropicKey }),
+      );
     }
   }
 
@@ -1267,6 +1287,10 @@ export class ProjectSession {
       this.chiefEffort = status.chief.effort;
       if (typeof status.chief.fast === "boolean") this.chiefFast = status.chief.fast;
     }
+    if (Array.isArray(status.availableModels) && status.availableModels.length) {
+      this.availableModels = status.availableModels;
+    }
+    if (typeof status.provider === "string") this.provider = status.provider;
     if (status.chat && this.chat.length === 0) {
       this.chat = status.chat;
     }

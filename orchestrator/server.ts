@@ -29,7 +29,9 @@ export interface ClientMessage {
     // F4 (Maliyet Kontrol)
     | "butce_cap"
     // Architect -> target agent: a controlled restart request (restart_agent tool).
-    | "restart_iste";
+    | "restart_iste"
+    // Provider API keys (DeepSeek / Anthropic) — UI Keys panel.
+    | "set_providers";
   // F1.3b: the "ajan_mesaj" kind was removed — the UI specialist chat surface
   // was deleted in F1.2, the backend specialist subprocess flow in F1.3a/b.
   // Chat history (Fix 55): chat_history_iste {reqId, sessionId?, limit?}
@@ -82,6 +84,10 @@ export interface ClientMessage {
   // restart_iste — the restart note + continuation task sent by the Architect.
   restartNot?: string;
   restartDevam?: string;
+  // set_providers — DeepSeek / Anthropic API key'leri (UI Keys panel). Bos
+  // string = o provider'i temizle.
+  deepseekKey?: string;
+  anthropicKey?: string;
 }
 
 export interface ToolActivity {
@@ -283,6 +289,9 @@ export interface ServerHandlers {
   // Architect restart_agent -> a controlled restart of the target agent. The
   // target agent triggers its own supervisor restart flow via this handler.
   onRestartSelf?: (opts: { not?: string; devamGorevi?: string }) => void;
+  // Provider key'leri kaydet + canli uygula (DeepSeek proxy routing). Bos string
+  // = o key'i temizle.
+  onSetProviders?: (deepseekKey: string, anthropicKey: string) => void;
 }
 
 export class ArchitectServer {
@@ -323,6 +332,9 @@ export class ArchitectServer {
           // Fix STOP-1: if the control message carries a sessionId, target that session;
           // otherwise the handler targets all running sessions.
           handlers.onControl(msg.aksiyon, msg.sessionId);
+        } else if (msg.kind === "set_providers") {
+          handlers.onSetProviders?.(msg.deepseekKey ?? "", msg.anthropicKey ?? "");
+          this.send(ws, { kind: "durum", payload: handlers.getStatus() });
         } else if (msg.kind === "sef_model") {
           handlers.onSetModel(msg.model, msg.effort, msg.fast);
         } else if (msg.kind === "uzman_model" && msg.agent) {

@@ -17,6 +17,7 @@ export const MODELS = [
 export const EFFORTS = ["low", "medium", "high", "xhigh", "max"];
 
 export function modelShort(m: string): string {
+  if (m.includes("deepseek")) return m.includes("pro") ? "DS·V4 Pro" : "DS·V4 Flash";
   if (m.includes("opus-4-8")) return "opus·4.8";
   if (m.includes("opus-4-7")) return "opus·4.7";
   if (m.includes("opus")) return "opus";

@@ -4,7 +4,7 @@
   import ContextGauge from "$lib/ui/ContextGauge.svelte";
   import ChatBgPicker from "$lib/ui/ChatBgPicker.svelte";
   import BudgetCard from "$lib/budget/BudgetCard.svelte";
-  import { MODELS, EFFORTS } from "$lib/router/helpers.js";
+  import { EFFORTS } from "$lib/router/helpers.js";
 
   // The SHARED right-hand part of the Mimar (GlobalChief) and Sef (ProjectScreen)
   // top toolbars. Plan / context gauge / session-$ / hourly-$ / model-widget /
@@ -17,6 +17,26 @@
   let modelMenuOpen = $state(false);
   // F4 (Cost Control): click the Budget badge -> BudgetCard dropdown.
   let budgetMenuOpen = $state(false);
+  // Provider keys panel (DeepSeek / Anthropic). Inputs are write-only — the key
+  // value never comes back from the backend, so fields start empty.
+  let keysOpen = $state(false);
+  let dsKeyInput = $state("");
+  let anKeyInput = $state("");
+  let keysSaved = $state(false);
+  const providerLabel = $derived(
+    session.provider === "deepseek"
+      ? "DeepSeek (oncelik)"
+      : session.provider === "anthropic-key"
+        ? "Anthropic API key"
+        : "Anthropic Max (OAuth)",
+  );
+  function saveKeys() {
+    session.setProviders(dsKeyInput.trim(), anKeyInput.trim());
+    keysSaved = true;
+    dsKeyInput = "";
+    anKeyInput = "";
+    setTimeout(() => (keysSaved = false), 2500);
+  }
   // Self role: sessionsIsGlobal=true -> Mimar; otherwise chief. The advisor uses
   // a separate screen (this toolbar is only on the Mimar/Sef surface).
   const selfRole = $derived<"chief" | "mimar" | "specialist" | "advisor" | "worker">(
@@ -134,7 +154,7 @@
       ></div>
       <div class="ct-menu arc-card">
         <span class="arc-caption">Model</span>
-        {#each MODELS as m (m)}
+        {#each session.availableModels as m (m)}
           <button
             class="ct-opt"
             class:sel={session.chiefModel === m}
@@ -173,6 +193,47 @@
             <span class="ct-fast-knob"></span>
           </span>
         </button>
+
+        <div class="ct-prov-row">
+          <span class="arc-caption">Provider</span>
+          <span class="ct-prov-badge" data-p={session.provider}>{providerLabel}</span>
+        </div>
+        <button class="ct-keys-toggle" onclick={() => (keysOpen = !keysOpen)}>
+          <Icon name="wrench" size={13} stroke={2.2} />
+          <span>API anahtarlari</span>
+          <Icon name={keysOpen ? "chevronDown" : "chevronRight"} size={13} stroke={2.2} />
+        </button>
+        {#if keysOpen}
+          <div class="ct-keys">
+            <label class="ct-key-field">
+              <span>DeepSeek API key</span>
+              <input
+                type="password"
+                placeholder={session.provider === "deepseek" ? "kayitli (degistirmek icin yaz)" : "sk-..."}
+                bind:value={dsKeyInput}
+                autocomplete="off"
+                spellcheck="false"
+              />
+            </label>
+            <label class="ct-key-field">
+              <span>Anthropic API key (opsiyonel)</span>
+              <input
+                type="password"
+                placeholder="sk-ant-... (bos = Max OAuth)"
+                bind:value={anKeyInput}
+                autocomplete="off"
+                spellcheck="false"
+              />
+            </label>
+            <button class="ct-keys-save" onclick={saveKeys}>
+              {keysSaved ? "Kaydedildi" : "Kaydet + uygula"}
+            </button>
+            <span class="ct-keys-note">
+              DeepSeek key girilince oncelik DeepSeek olur; sef/danisman v4-pro, uzman v4-flash.
+              Bu pencere acik projede aninda; diger ajanlar bir sonraki restart'ta.
+            </span>
+          </div>
+        {/if}
       </div>
     {/if}
   </div>
@@ -493,5 +554,99 @@
   }
   .ct-fast-switch.on .ct-fast-knob {
     transform: translateX(16px);
+  }
+  .ct-prov-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--arc-border);
+  }
+  .ct-prov-badge {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: var(--arc-r-pill);
+    background: var(--arc-surface);
+    border: 1px solid var(--arc-border);
+    color: var(--arc-text-soft);
+  }
+  .ct-prov-badge[data-p="deepseek"] {
+    color: #fff;
+    background: linear-gradient(135deg, #0f766e, #14b8a6);
+    border-color: transparent;
+  }
+  .ct-keys-toggle {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    padding: 7px 9px;
+    border-radius: var(--arc-r-sm);
+    border: 1px solid var(--arc-border);
+    background: var(--arc-surface);
+    color: var(--arc-text-soft);
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s var(--arc-ease);
+  }
+  .ct-keys-toggle:hover {
+    background: var(--arc-primary-soft);
+  }
+  .ct-keys-toggle span {
+    flex: 1;
+    text-align: left;
+  }
+  .ct-keys {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 2px 2px;
+  }
+  .ct-key-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .ct-key-field span {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--arc-text-faint);
+  }
+  .ct-key-field input {
+    font-size: 11.5px;
+    font-family: var(--arc-mono);
+    padding: 6px 8px;
+    border-radius: var(--arc-r-sm);
+    border: 1px solid var(--arc-border);
+    background: var(--arc-bg);
+    color: var(--arc-text);
+    outline: none;
+  }
+  .ct-key-field input:focus {
+    border-color: var(--arc-primary);
+  }
+  .ct-keys-save {
+    padding: 7px 9px;
+    border-radius: var(--arc-r-sm);
+    border: none;
+    background: var(--arc-primary);
+    color: #fff;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter 0.12s var(--arc-ease);
+  }
+  .ct-keys-save:hover {
+    filter: brightness(1.08);
+  }
+  .ct-keys-note {
+    font-size: 10px;
+    line-height: 1.45;
+    color: var(--arc-text-faint);
   }
 </style>

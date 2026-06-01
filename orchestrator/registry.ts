@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { defaultModelForRole } from "./providers.js";
 
 // Task #98/99: xhigh + max effort levels with Opus 4.8 (ultracode dynamic
 // workflow trigger). The SDK AgentDefinition.effort has the same 5 values.
@@ -157,7 +158,9 @@ export class AgentRegistry {
       role: input.role,
       systemPrompt: input.systemPrompt,
       allowedTools: input.allowedTools ?? [],
-      model: normalizeModelSlug(input.model) ?? DEFAULT_MODEL,
+      // Provider=deepseek ise uzman default'u v4-flash; aksi halde opus-4-8.
+      // Sef acikca model verirse o gecerli (normalize edilir).
+      model: normalizeModelSlug(input.model) ?? defaultModelForRole("uzman"),
       effort: input.effort ?? DEFAULT_EFFORT,
       skills: input.skills ?? [],
       sessionId: null,
