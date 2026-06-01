@@ -1449,21 +1449,31 @@ export function createRunChiefAttempt(deps: RunChiefAttemptDeps): RunChiefAttemp
                   const deleg = agentDelegations.get(b.tool_use_id);
                   if (deleg) {
                     agentDelegations.delete(b.tool_use_id);
-                    // Sidebar status dot: native Agent delegation finished → back to idle
-                    // (or error). Pairs with the delege_basladi emitted at tool_use time.
-                    emit("delege_bitti", { agent: deleg.specialist, isError: !!t.hata });
-                    try {
-                      // The task (ajan_komut) was ALREADY written at tool_use time; here
-                      // only add the specialist's result. Via refreshStatus the modal
-                      // "running" -> result transition shows instantly.
-                      registry.appendChat(deleg.specialist, {
-                        role: "uzman",
-                        text: t.sonuc,
-                        ts: Date.now(),
-                        hata: t.hata,
-                      });
-                      pushStatus();
-                    } catch { /* registry write is not critical */ }
+                    // Fix 160: a BACKGROUND (fire-and-forget) Agent call returns an
+                    // immediate launch acknowledgement ("Async agent launched
+                    // successfully. agentId: ...") — this is NOT the specialist's
+                    // result and must not be written to its chat as a "uzman" reply
+                    // (it leaks the internal agentId + SendMessage instruction). The
+                    // REAL result arrives later via handleBgComplete (task_notification).
+                    // The specialist is also still RUNNING, so do NOT flip the sidebar
+                    // dot to idle here.
+                    const isBgLaunchAck = /async agent launched/i.test(t.sonuc ?? "");
+                    if (!isBgLaunchAck) {
+                      // Sidebar status dot: native Agent delegation finished → back to
+                      // idle (or error). Pairs with the delege_basladi at tool_use time.
+                      emit("delege_bitti", { agent: deleg.specialist, isError: !!t.hata });
+                      try {
+                        // The task (ajan_komut) was ALREADY written at tool_use time;
+                        // here only add the specialist's result.
+                        registry.appendChat(deleg.specialist, {
+                          role: "uzman",
+                          text: t.sonuc,
+                          ts: Date.now(),
+                          hata: t.hata,
+                        });
+                        pushStatus();
+                      } catch { /* registry write is not critical */ }
+                    }
                   }
                   // Fix 121: write the tool result to the draft too.
                   persistLiveDraft();

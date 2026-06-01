@@ -400,6 +400,12 @@ fn spawn_orchestrator(port: u16, project_path: &str) -> Option<Child> {
         .arg(&entry)
         .arg(port.to_string())
         .arg(project_path)
+        // 1h prompt-cache TTL (safe: extends cache lifetime only, does NOT touch the
+        // billing header, so no 429 risk). Without it the default 5m TTL evicts the
+        // cached prefix whenever a turn gap exceeds 5 min (a specialist running, the
+        // user thinking) and the next call re-creates the whole context at 1.25x — the
+        // dominant cache cost. 1h keeps the prefix warm across those gaps.
+        .env("ARCHITECT_CACHE_1H", "1")
         .current_dir(&repo_root);
     hide_console(&mut cmd);
     cmd.spawn().ok()
@@ -414,6 +420,7 @@ fn spawn_global_orchestrator(port: u16) -> Option<Child> {
         .arg(&entry)
         .arg(port.to_string())
         .arg("--global")
+        .env("ARCHITECT_CACHE_1H", "1")
         .current_dir(&repo_root);
     hide_console(&mut cmd);
     cmd.spawn().ok()
@@ -446,6 +453,7 @@ fn spawn_advisor(key: &str, port: u16) -> Option<Child> {
         .arg(port.to_string())
         .arg("--advisor")
         .arg(key)
+        .env("ARCHITECT_CACHE_1H", "1")
         .current_dir(&repo_root);
     hide_console(&mut cmd);
     cmd.spawn().ok()
