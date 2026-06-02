@@ -124,6 +124,14 @@ export function availableModels(cfg: ProviderConfig = loadProviders()): string[]
   return out;
 }
 
+// Yardimci/arka-plan LLM cagrilari (worker, reflection, nightly report, budget
+// fallback) icin: provider=deepseek ise ucuz model = v4-flash; aksi halde
+// verilen claude fallback (haiku/sonnet) kullanilir. DeepSeek key tanimliysa
+// HER YERDE deepseek oncelikli olsun diye bu wrapper sart.
+export function cheapModel(claudeFallback: string): string {
+  return resolveProvider() === "deepseek" ? DEEPSEEK_FLASH : claudeFallback;
+}
+
 export type AgentRole = "mimar" | "sef" | "advisor" | "uzman";
 
 // Rol bazli default model. provider=deepseek: uzman=flash, digerleri=pro.

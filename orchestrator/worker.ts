@@ -9,6 +9,7 @@ import {
   buildCodeGraphMcpServer,
   CODEGRAPH_TOOL_NAMES_FOR_SUBAGENTS,
 } from "./codegraph/mcpTools.js";
+import { cheapModel } from "./providers.js";
 
 // COST SAVING: worker is a fire-forget one-shot short job — Haiku 4-5 is enough
 // and ~3x cheaper than Sonnet (input $1 / output $5 vs $3/$15). Minimal quality
@@ -38,7 +39,8 @@ export async function spawnWorker(task: string): Promise<WorkerResult> {
     prompt: task,
     options: {
       systemPrompt: WORKER_PROMPT,
-      model: WORKER_MODEL,
+      // Provider=deepseek -> v4-flash, aksi halde haiku.
+      model: cheapModel(WORKER_MODEL),
       tools: ["Bash", "Read", "Grep", "Glob", "WebSearch", "WebFetch", ...CODEGRAPH_TOOL_NAMES_FOR_SUBAGENTS],
       mcpServers: { codegraph: codeGraphServer } as never,
       skills: [],

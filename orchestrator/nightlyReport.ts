@@ -16,6 +16,7 @@ import { join, dirname } from "node:path";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import type { UsageRecord } from "./usage.js";
 import { fmtDateTr, fmtDateTimeTr } from "./time.js";
+import { cheapModel } from "./providers.js";
 
 export interface NightlyReportOpts {
   // The LIST of paths like appData/com.seyh.architect/global/usage.json
@@ -251,7 +252,8 @@ async function generateReport(opts: NightlyReportOpts, dayKey: string): Promise<
     const it = query({
       prompt,
       options: {
-        model: "claude-sonnet-4-6",
+        // Provider=deepseek -> v4-flash (rapor metni ucuz uretilir), aksi halde sonnet.
+        model: cheapModel("claude-sonnet-4-6"),
         maxThinkingTokens: 0,
         // COST SAVING: text-only, none of tools/skills/CLAUDE.md needed.
         tools: [],

@@ -2,6 +2,7 @@
 // parent agent's last turn in advance. The resulting critique is appended to
 // the next turn's prompt, so if the chief loops/repeats/skips it comes back aware.
 import { query } from "@anthropic-ai/claude-agent-sdk";
+import { cheapModel } from "./providers.js";
 
 const REFLECT_SYS = `You are Architect's critic agent — you review the parent agent's (chief's) last turn and write a short critique.
 You look for:
@@ -41,7 +42,8 @@ export async function reflect(input: ReflectInput): Promise<string> {
       prompt,
       options: {
         systemPrompt: REFLECT_SYS,
-        model: REFLECT_MODEL,
+        // Provider=deepseek -> v4-flash, aksi halde haiku.
+        model: cheapModel(REFLECT_MODEL),
         maxThinkingTokens: 0,
         permissionMode: "bypassPermissions",
         allowDangerouslySkipPermissions: true,
