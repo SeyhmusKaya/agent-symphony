@@ -7,11 +7,17 @@
   let loading = $state(true);
   let turnSum = $state<TurnMetricsSummary | null>(null);
 
-  // Pricing (USD / 1M tokens). Approx. average of Sonnet-4-6 + Opus-4-7.
-  // User runs a mix of opus + sonnet. This is an estimate — shown in the UI
-  // with an "approximate" note.
-  const PRICE_IN = 5; // $5 / 1M input (cache mix)
-  const PRICE_OUT = 25; // $25 / 1M output
+  // Active provider (from the global session status). When DeepSeek is the
+  // active provider all agents default to DeepSeek, so the aggregate is priced
+  // with DeepSeek rates instead of Claude's.
+  const { provider = "anthropic-oauth" }: { provider?: string } = $props();
+  const isDeepSeek = $derived(provider === "deepseek");
+
+  // Pricing (USD / 1M tokens) — blended estimate, shown with an "approximate" note.
+  // Claude: avg of Sonnet-4-6 + Opus (~$5 in / $25 out with cache mix).
+  // DeepSeek V4: blended pro/flash with cache hits (~$0.30 in / $0.60 out).
+  const PRICE_IN = $derived(isDeepSeek ? 0.3 : 5);
+  const PRICE_OUT = $derived(isDeepSeek ? 0.6 : 25);
 
   const days = $derived(buildRange(period, all));
   const maxTotal = $derived(Math.max(1, ...days.map((d) => d.input + d.output)));

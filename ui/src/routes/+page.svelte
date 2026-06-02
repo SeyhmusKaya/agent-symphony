@@ -497,7 +497,7 @@
                 <div class="screen-title">Usage statistics</div>
               </div>
             </header>
-            <div class="screen-body"><Usage /></div>
+            <div class="screen-body"><Usage provider={sessions[mimar.key].provider} /></div>
           </div>
         {:else if view === "raporlar"}
           <ReportsScreen
