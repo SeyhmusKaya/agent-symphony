@@ -19,8 +19,7 @@
 
 <br/>
 
-[Türkçe](README.tr.md) · [English](README.md) · **中文** · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Português](README.pt.md)
-
+[Türkçe](README.tr.md) · [English](README.md) · **中文** · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Português](README.pt.md) · [Русский](README.ru.md)
 </div>
 
 ---
